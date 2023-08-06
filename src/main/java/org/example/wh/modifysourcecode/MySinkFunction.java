@@ -17,9 +17,9 @@ import java.io.IOException;
 
 /**
  * @author wh
- * @create 2023/8/5 15:37
+ * @create 2023/8/6 12:03
  */
-public class MySinkFunction<T> extends RichSinkFunction<T>
+public class MySinkFunction <T> extends RichSinkFunction<T>
         implements CheckpointedFunction, InputTypeConfigurable {
     private final JdbcOutputFormat<T, ?, ?> outputFormat;
 
@@ -41,8 +41,7 @@ public class MySinkFunction<T> extends RichSinkFunction<T>
     }
 
     @Override
-    public void initializeState(FunctionInitializationContext context) {
-    }
+    public void initializeState(FunctionInitializationContext context) {}
 
     @Override
     public void snapshotState(FunctionSnapshotContext context) throws Exception {

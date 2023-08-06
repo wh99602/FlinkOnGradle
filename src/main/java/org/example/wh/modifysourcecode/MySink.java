@@ -12,6 +12,7 @@ import org.apache.flink.table.connector.sink.SinkFunctionProvider;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.types.RowKind;
+import org.example.wh.SqlConnector.MyPrintSinkFunction;
 
 import java.util.Objects;
 
@@ -24,14 +25,14 @@ import static org.apache.flink.util.Preconditions.checkState;
  */
 public class MySink implements DynamicTableSink {
 
-    private final JdbcConnectorOptions jdbcOptions;
+    private final MyConnectorOptions jdbcOptions;
     private final JdbcExecutionOptions executionOptions;
     private final JdbcDmlOptions dmlOptions;
     private final DataType physicalRowDataType;
     private final String dialectName;
 
     public MySink(
-            JdbcConnectorOptions jdbcOptions,
+            MyConnectorOptions jdbcOptions,
             JdbcExecutionOptions executionOptions,
             JdbcDmlOptions dmlOptions,
             DataType physicalRowDataType) {
@@ -63,7 +64,7 @@ public class MySink implements DynamicTableSink {
     public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
         final TypeInformation<RowData> rowDataTypeInformation =
                 context.createTypeInformation(physicalRowDataType);
-        final JdbcOutputFormatBuilder builder = new JdbcOutputFormatBuilder();
+        final MyOutputFormatBuilder builder = new MyOutputFormatBuilder();
 
         builder.setJdbcOptions(jdbcOptions);
         builder.setJdbcDmlOptions(dmlOptions);
@@ -71,8 +72,12 @@ public class MySink implements DynamicTableSink {
         builder.setRowDataTypeInfo(rowDataTypeInformation);
         builder.setFieldDataTypes(
                 DataType.getFieldDataTypes(physicalRowDataType).toArray(new DataType[0]));
+        if(jdbcOptions.getWritenull()){
         return SinkFunctionProvider.of(
-                new GenericJdbcSinkFunction<>(builder.build()), jdbcOptions.getParallelism());
+                new MySinkFunction<>(builder.build()), jdbcOptions.getParallelism());
+        }else {
+            return SinkFunctionProvider.of(new MyPrintSinkFunction(), jdbcOptions.getParallelism());
+        }
     }
 
     @Override

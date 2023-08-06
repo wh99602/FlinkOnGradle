@@ -1,24 +1,5 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.example.wh.modifysourcecode;
 
-import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
@@ -29,9 +10,11 @@ import java.util.Optional;
 
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
-/** Options for the JDBC connector. */
-@Internal
-public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
+/**
+ * @author wh
+ * @create 2023/8/6 12:50
+ */
+public class MyConnectorOptions extends JdbcConnectionOptions {
 
     private static final long serialVersionUID = 1L;
 
@@ -39,7 +22,9 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
     private final JdbcDialect dialect;
     private final @Nullable Integer parallelism;
 
-    private InternalJdbcConnectionOptions(
+    private final Boolean writenull;
+
+    private MyConnectorOptions(
             String dbURL,
             String tableName,
             @Nullable String driverName,
@@ -47,11 +32,17 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
             @Nullable String password,
             JdbcDialect dialect,
             @Nullable Integer parallelism,
-            int connectionCheckTimeoutSeconds) {
+            int connectionCheckTimeoutSeconds,
+            Boolean writenull) {
         super(dbURL, driverName, username, password, connectionCheckTimeoutSeconds);
         this.tableName = tableName;
         this.dialect = dialect;
         this.parallelism = parallelism;
+        this.writenull=writenull;
+    }
+
+    public Boolean getWritenull() {
+        return writenull;
     }
 
     public String getTableName() {
@@ -66,24 +57,24 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
         return parallelism;
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static MyConnectorOptions.Builder builder() {
+        return new MyConnectorOptions.Builder();
     }
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof InternalJdbcConnectionOptions) {
-            InternalJdbcConnectionOptions options = (InternalJdbcConnectionOptions) o;
+        if (o instanceof MyConnectorOptions) {
+            MyConnectorOptions options = (MyConnectorOptions) o;
             return Objects.equals(url, options.url)
                     && Objects.equals(tableName, options.tableName)
                     && Objects.equals(driverName, options.driverName)
                     && Objects.equals(username, options.username)
                     && Objects.equals(password, options.password)
                     && Objects.equals(
-                            dialect.getClass().getName(), options.dialect.getClass().getName())
+                    dialect.getClass().getName(), options.dialect.getClass().getName())
                     && Objects.equals(parallelism, options.parallelism)
                     && Objects.equals(
-                            connectionCheckTimeoutSeconds, options.connectionCheckTimeoutSeconds);
+                    connectionCheckTimeoutSeconds, options.connectionCheckTimeoutSeconds);
         } else {
             return false;
         }
@@ -102,7 +93,7 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
                 connectionCheckTimeoutSeconds);
     }
 
-    /** Builder of {@link InternalJdbcConnectionOptions}. */
+    /** Builder of {@link MyConnectorOptions}. */
     public static class Builder {
         private ClassLoader classLoader;
         private String dbURL;
@@ -113,6 +104,7 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
         private JdbcDialect dialect;
         private Integer parallelism;
         private int connectionCheckTimeoutSeconds = 60;
+        private Boolean writenull;
 
         /**
          * optional, specifies the classloader to use in the planner for load the class in user jar.
@@ -122,31 +114,35 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
          *
          * <p>Modify the {@link ClassLoader} only if you know what you're doing.
          */
-        public Builder setClassLoader(ClassLoader classLoader) {
+        public MyConnectorOptions.Builder setWritenull(Boolean writenull) {
+            this.writenull = writenull;
+            return this;
+        }
+        public MyConnectorOptions.Builder setClassLoader(ClassLoader classLoader) {
             this.classLoader = classLoader;
             return this;
         }
 
         /** required, table name. */
-        public Builder setTableName(String tableName) {
+        public MyConnectorOptions.Builder setTableName(String tableName) {
             this.tableName = tableName;
             return this;
         }
 
         /** optional, user name. */
-        public Builder setUsername(String username) {
+        public MyConnectorOptions.Builder setUsername(String username) {
             this.username = username;
             return this;
         }
 
         /** optional, password. */
-        public Builder setPassword(String password) {
+        public MyConnectorOptions.Builder setPassword(String password) {
             this.password = password;
             return this;
         }
 
         /** optional, connectionCheckTimeoutSeconds. */
-        public Builder setConnectionCheckTimeoutSeconds(int connectionCheckTimeoutSeconds) {
+        public MyConnectorOptions.Builder setConnectionCheckTimeoutSeconds(int connectionCheckTimeoutSeconds) {
             this.connectionCheckTimeoutSeconds = connectionCheckTimeoutSeconds;
             return this;
         }
@@ -155,13 +151,13 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
          * optional, driver name, dialect has a default driver name, See {@link
          * JdbcDialect#defaultDriverName}.
          */
-        public Builder setDriverName(String driverName) {
+        public MyConnectorOptions.Builder setDriverName(String driverName) {
             this.driverName = driverName;
             return this;
         }
 
         /** required, JDBC DB url. */
-        public Builder setDBUrl(String dbURL) {
+        public MyConnectorOptions.Builder setDBUrl(String dbURL) {
             this.dbURL = dbURL;
             return this;
         }
@@ -170,17 +166,17 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
          * optional, Handle the SQL dialect of jdbc driver. If not set, it will be infer by {@link
          * JdbcDialectLoader#load} from DB url.
          */
-        public Builder setDialect(JdbcDialect dialect) {
+        public MyConnectorOptions.Builder setDialect(JdbcDialect dialect) {
             this.dialect = dialect;
             return this;
         }
 
-        public Builder setParallelism(Integer parallelism) {
+        public MyConnectorOptions.Builder setParallelism(Integer parallelism) {
             this.parallelism = parallelism;
             return this;
         }
 
-        public InternalJdbcConnectionOptions build() {
+        public MyConnectorOptions build() {
             checkNotNull(dbURL, "No dbURL supplied.");
             checkNotNull(tableName, "No tableName supplied.");
             if (this.dialect == null) {
@@ -196,7 +192,7 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
                                 () -> new NullPointerException("No driverName supplied."));
             }
 
-            return new InternalJdbcConnectionOptions(
+            return new MyConnectorOptions(
                     dialect.appendDefaultUrlProperties(dbURL),
                     tableName,
                     driverName,
@@ -204,7 +200,8 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
                     password,
                     dialect,
                     parallelism,
-                    connectionCheckTimeoutSeconds);
+                    connectionCheckTimeoutSeconds,
+                    writenull);
         }
     }
 }

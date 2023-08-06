@@ -30,10 +30,10 @@ import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.MAX_RET
 public class MySinkFactoryWh implements DynamicTableSinkFactory {
     public static final String IDENTIFIER = "whaaa";
 
-    public static final ConfigOption<String> WRITENULL =
-            ConfigOptions.key("writeNull")
-                    .stringType()
-                    .noDefaultValue()
+    public static final ConfigOption<Boolean> WRITENULL =
+            ConfigOptions.key("writenull")
+                    .booleanType()
+                    .defaultValue(false)
                     .withDescription("Write null value or not.");
 
     @Override
@@ -46,7 +46,7 @@ public class MySinkFactoryWh implements DynamicTableSinkFactory {
         validateConfigOptions(config, context.getClassLoader());
         validateDataTypeWithJdbcDialect(
                 context.getPhysicalRowDataType(), config.get(URL), context.getClassLoader());
-        JdbcConnectorOptions jdbcOptions = getJdbcOptions(config, context.getClassLoader());
+        MyConnectorOptions jdbcOptions = getJdbcOptions(config, context.getClassLoader());
 
         return new MySink(
                 jdbcOptions,
@@ -60,7 +60,7 @@ public class MySinkFactoryWh implements DynamicTableSinkFactory {
 
     @Override
     public String factoryIdentifier() {
-        return null;
+        return IDENTIFIER;
     }
 
     @Override
@@ -108,11 +108,11 @@ public class MySinkFactoryWh implements DynamicTableSinkFactory {
         dialect.validate((RowType) dataType.getLogicalType());
     }
 
-    private JdbcConnectorOptions getJdbcOptions(
+    private MyConnectorOptions getJdbcOptions(
             ReadableConfig readableConfig, ClassLoader classLoader) {
         final String url = readableConfig.get(URL);
-        final JdbcConnectorOptions.Builder builder =
-                JdbcConnectorOptions.builder()
+        final MyConnectorOptions.Builder builder =
+                MyConnectorOptions.builder()
                         .setClassLoader(classLoader)
                         .setDBUrl(url)
                         .setTableName(readableConfig.get(TABLE_NAME))
@@ -124,6 +124,7 @@ public class MySinkFactoryWh implements DynamicTableSinkFactory {
         readableConfig.getOptional(DRIVER).ifPresent(builder::setDriverName);
         readableConfig.getOptional(USERNAME).ifPresent(builder::setUsername);
         readableConfig.getOptional(PASSWORD).ifPresent(builder::setPassword);
+        readableConfig.getOptional(WRITENULL).ifPresent(builder::setWritenull);
         return builder.build();
     }
 
@@ -209,7 +210,7 @@ public class MySinkFactoryWh implements DynamicTableSinkFactory {
     }
 
     private JdbcDmlOptions getJdbcDmlOptions(
-            JdbcConnectorOptions jdbcOptions, DataType dataType, int[] primaryKeyIndexes) {
+            MyConnectorOptions jdbcOptions, DataType dataType, int[] primaryKeyIndexes) {
 
         String[] keyFields =
                 Arrays.stream(primaryKeyIndexes)

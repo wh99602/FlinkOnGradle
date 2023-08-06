@@ -17,12 +17,13 @@ public class StreamToTableTest {
         tableEnv.executeSql("create table abb (" +
                 " `id` string " +
                 " )with(" +
-                " 'connector' = 'jdbc' " +
+                " 'connector' = 'whaaa' " +
 //                " ,'home' = 'jdbc:mysql://43.143.254.23:3306/wh_test' " +
                 " ,'url' = 'jdbc:mysql://43.143.254.23:3306/wh_test' " +
                 " ,'table-name' = 'flink_test' " +
                 " ,'username' = 'root' " +
                 " ,'password' = '000000' " +
+                " ,'writenull' = 'false' " +
                 ")");
         Table table = tableEnv.fromDataStream(socketSource);
 
